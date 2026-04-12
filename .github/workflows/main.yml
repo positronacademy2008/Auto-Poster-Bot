@@ -4,10 +4,10 @@ on:
   schedule:
     # Ye roz subah 10:00 AM IST par chalega (UTC 4:30 AM)
     - cron: '30 4 * * *'
-  workflow_dispatch: # Manual button ke liye
+  workflow_dispatch: # Isse aap jab chahe manual button daba kar chala sakte hain
 
 permissions:
-  contents: write
+  contents: write # Ye permission file wapas save karne ke liye zaroori hai
 
 jobs:
   post-image:
@@ -21,7 +21,7 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: Install Requests
+      - name: Install Requirements
         run: pip install requests
 
       - name: Run Bot Script
@@ -32,8 +32,10 @@ jobs:
 
       - name: Save Post History
         run: |
-          git config --global user.name 'GitHub Action Bot'
-          git config --global user.email 'action@github.com'
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          # Agar posted.txt nahi hai toh create karega
+          touch posted.txt
           git add posted.txt
-          git commit -m "Updated posted history" || echo "No changes"
-          git push
+          git commit -m "Updated posted history [skip ci]" || echo "No changes to commit"
+          git push origin main
