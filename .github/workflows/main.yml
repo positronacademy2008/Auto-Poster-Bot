@@ -2,8 +2,10 @@ name: Auto FB Poster
 
 on:
   schedule:
-    # Ye roz subah 10:00 AM IST par chalega (UTC 4:30 AM)
+    # Subah 7:00 AM IST (01:30 UTC)
     - cron: '30 1 * * *'
+    # Shaam 6:00 PM IST (12:30 UTC)
+    - cron: '30 12 * * *'
   workflow_dispatch: # Isse aap jab chahe manual button daba kar chala sakte hain
 
 permissions:
