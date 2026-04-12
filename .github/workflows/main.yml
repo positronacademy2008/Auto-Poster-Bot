@@ -1,0 +1,39 @@
+name: Auto FB Poster
+
+on:
+  schedule:
+    # Ye roz subah 10:00 AM IST par chalega (UTC 4:30 AM)
+    - cron: '30 4 * * *'
+  workflow_dispatch: # Manual button ke liye
+
+permissions:
+  contents: write
+
+jobs:
+  post-image:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install Requests
+        run: pip install requests
+
+      - name: Run Bot Script
+        env:
+          FB_PAGE_TOKEN: ${{ secrets.FB_PAGE_TOKEN }}
+          PAGE_ID: ${{ secrets.PAGE_ID }}
+        run: python bot.py
+
+      - name: Save Post History
+        run: |
+          git config --global user.name 'GitHub Action Bot'
+          git config --global user.email 'action@github.com'
+          git add posted.txt
+          git commit -m "Updated posted history" || echo "No changes"
+          git push
