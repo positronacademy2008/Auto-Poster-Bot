@@ -33,7 +33,7 @@ def post_to_facebook():
     
     # Naya rasta: /me/feed ya /{page_id}/photos bina publish_actions ke
     # Hum seedha Page ID par hit karenge
-    url = f"https://graph.facebook.com/v25.0/{PAGE_ID}/photos"
+    url = f"https://graph.facebook.com/v25.0/{61585098452625}/photos"
 
     with open(image_path, 'rb') as img_file:
         # Dhyan dein: permissions ab 'pages_manage_posts' honi chahiye
