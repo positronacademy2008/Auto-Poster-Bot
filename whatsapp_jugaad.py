@@ -14,7 +14,7 @@ from selenium.webdriver.common.by import By
 GITHUB_USER = "positronacademy2008" 
 PRIVATE_REPO = "positron-storage"
 # Parts ke naam check kar lein jo aapne upload kiye hain
-PARTS = ["whatsapp_session.zip.001", "whatsapp_session.zip.002", "whatsapp_session.zip.003", "whatsapp_session.zip.004"]
+PARTS = ["whatsapp_session_2.zip.001", "whatsapp_session_2.zip.002", "whatsapp_session_2.zip.003", "whatsapp_session_2.zip.004"]
 
 def download_and_combine_session():
     token = os.environ.get("MY_GITHUB_TOKEN")
