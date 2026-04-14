@@ -21,7 +21,11 @@ jobs:
           python-version: '3.9'
 
       - name: Install Dependencies
-        run: pip install requests
+        run: |
+          pip install requests selenium webdriver-manager
+          # Linux par Chrome ke liye zaroori dependencies
+          sudo apt-get update
+          sudo apt-get install -y google-chrome-stable
 
       # --- Step 1: Run Social Media Bot (FB & IG) ---
       - name: Run FB & IG Bot
@@ -30,12 +34,11 @@ jobs:
           IG_ACCOUNT_ID: ${{ secrets.IG_ACCOUNT_ID }}
         run: python bot.py
 
-      # --- Step 2: Run WhatsApp Bulk Bot ---
+      # --- Step 2: Run WhatsApp Jugaad Bot (Session Based) ---
       - name: Run WhatsApp Bot
         env:
-          WA_TOKEN: ${{ secrets.WA_TOKEN }}
-          WA_PHONE_NUMBER_ID: ${{ secrets.WA_PHONE_NUMBER_ID }}
-        run: python whatsapp_bot.py
+          MY_GITHUB_TOKEN: ${{ secrets.MY_GITHUB_TOKEN }}
+        run: python whatsapp_jugaad.py
 
       # --- Step 3: Save Progress (posted.txt ko update karne ke liye) ---
       - name: Commit and Push Changes
@@ -43,6 +46,5 @@ jobs:
           git config --global user.name "github-actions"
           git config --global user.email "github-actions@github.com"
           git add posted.txt
-          # Agar koi badlav nahi hai toh error na aaye isliye || exit 0
           git commit -m "Auto-update posted.txt [Skip CI]" || exit 0
           git push
