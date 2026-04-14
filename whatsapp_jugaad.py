@@ -26,7 +26,7 @@ def download_and_combine_session():
     try:
         with open("full_session.zip", "wb") as combined_file:
             for part in PARTS:
-                url = f"https://raw.githubusercontent.com/{GITHUB_USER}/{PRIVATE_REPO}/main/{part}"
+                url = f"https://raw.githubusercontent.com/positronacademy2008/positron-storage/main/{part}"
                 headers = {'Authorization': f'token {token}'}
                 res = requests.get(url, headers=headers)
                 
