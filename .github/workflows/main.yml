@@ -1,12 +1,10 @@
-name: Positron Academy Master Bot
+name: Positron FB & IG Poster
 
 on:
   schedule:
-    # Subah 7:00 AM IST (01:30 UTC)
-    - cron: '30 1 * * *'
-    # Shaam 6:00 PM IST (12:30 UTC)
-    - cron: '30 12 * * *'
-  workflow_dispatch: # Manual button ke liye
+    - cron: '30 1 * * *' # Subah 7:00 AM IST
+    - cron: '30 12 * * *' # Shaam 6:00 PM IST
+  workflow_dispatch: # Manual Button
 
 jobs:
   build:
@@ -22,26 +20,15 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          pip install requests selenium webdriver-manager
-          # Linux par Chrome ke liye zaroori dependencies
-          sudo apt-get update
-          sudo apt-get install -y google-chrome-stable
+          pip install requests
 
-      # --- Step 1: Run Social Media Bot (FB & IG) ---
       - name: Run FB & IG Bot
         env:
           FB_PAGE_TOKEN: ${{ secrets.FB_PAGE_TOKEN }}
           IG_ACCOUNT_ID: ${{ secrets.IG_ACCOUNT_ID }}
         run: python bot.py
 
-      # --- Step 2: Run WhatsApp Jugaad Bot (Session Based) ---
-      - name: Run WhatsApp Bot
-        env:
-          MY_GITHUB_TOKEN: ${{ secrets.MY_GITHUB_TOKEN }}
-        run: python whatsapp_jugaad.py
-
-      # --- Step 3: Save Progress (posted.txt ko update karne ke liye) ---
-      - name: Commit and Push Changes
+      - name: Commit and Push Progress
         run: |
           git config --global user.name "github-actions"
           git config --global user.email "github-actions@github.com"
