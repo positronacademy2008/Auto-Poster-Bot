@@ -2,79 +2,77 @@ import os
 import requests
 import time
 
-# Secrets se data
+# --- CONFIG ---
+# Zaroori: FB_PAGE_ID ko Secrets mein daal dena ya yahan likh dena
+FB_PAGE_ID = os.environ.get("FB_PAGE_ID") 
 ACCESS_TOKEN = os.environ.get("FB_PAGE_TOKEN")
 IG_ACCOUNT_ID = os.environ.get("IG_ACCOUNT_ID")
 REPO = os.environ.get("GITHUB_REPOSITORY")
-BRANCH = "main"
 
-CAPTION = "Positron Academy Bhilwara - Success Starts Here! 🚀 \nContact: 8104894648"
+CAPTION = "Positron Academy Bhilwara 🚀\nAdmission Open: BSTC, B.Ed, D.Pharma\nContact: 8104894648"
 
-def post_to_fb_and_ig():
-    if not os.path.exists("images"):
-        print("❌ Error: 'images' folder nahi mila.")
+def get_next_file():
+    # Folder check logic
+    for folder in ['images', 'videos']:
+        if os.path.exists(folder):
+            files = sorted([f for f in os.listdir(folder) if not f.startswith('.')])
+            posted = []
+            if os.path.exists("posted.txt"):
+                with open("posted.txt", "r") as f:
+                    posted = f.read().splitlines()
+            
+            for f in files:
+                if f not in posted:
+                    return folder, f
+    return None, None
+
+def post_content():
+    folder, filename = get_next_file()
+    if not filename:
+        print("✅ Sab kuch post ho chuka hai!")
         return
-    
-    all_images = sorted([img for img in os.listdir("images") if img.lower().endswith(('.png', '.jpg', '.jpeg'))])
-    posted_images = []
-    if os.path.exists("posted.txt"):
-        with open("posted.txt", "r") as f:
-            posted_images = f.read().splitlines()
 
-    target_image = next((img for img in all_images if img not in posted_images), None)
+    file_path = os.path.join(folder, filename)
+    is_video = folder == 'videos' or filename.lower().endswith(('.mp4', '.mov'))
     
-    if not target_image:
-        print("✅ Sabhi photos post ho chuki hain!")
-        return
+    print(f"🚀 Processing {folder}: {filename}")
 
-    print(f"🚀 Processing: {target_image}")
-    image_path = os.path.join("images", target_image)
-    
-    # --- 1. FACEBOOK POST (Direct Upload) ---
-    fb_url = "https://graph.facebook.com/v25.0/me/photos"
-    try:
-        with open(image_path, 'rb') as img_file:
-            payload = {'caption': CAPTION, 'access_token': ACCESS_TOKEN}
-            files = {'source': img_file}
-            fb_res = requests.post(fb_url, data=payload, files=files).json()
+    # --- 1. FACEBOOK POSTING ---
+    if is_video:
+        # Videos ke liye Page ID zaroori hai
+        fb_url = f"https://graph.facebook.com/v19.0/{FB_PAGE_ID}/videos"
+        # Video heavy hoti hai isliye URL method best hai
+        video_url = f"https://raw.githubusercontent.com/{REPO}/main/videos/{filename}"
+        payload = {'description': CAPTION, 'file_url': video_url, 'access_token': ACCESS_TOKEN}
+        res_fb = requests.post(fb_url, data=payload).json()
+    else:
+        # Photos ke liye aapka purana /me/ logic
+        fb_url = "https://graph.facebook.com/v19.0/me/photos"
+        with open(file_path, 'rb') as f:
+            res_fb = requests.post(fb_url, data={'caption': CAPTION, 'access_token': ACCESS_TOKEN}, files={'source': f}).json()
+
+    # --- 2. INSTAGRAM POSTING ---
+    if IG_ACCOUNT_ID:
+        media_url = f"https://raw.githubusercontent.com/{REPO}/main/{folder}/{filename}"
+        ig_base = f"https://graph.facebook.com/v19.0/{IG_ACCOUNT_ID}"
         
-        if 'id' in fb_res:
-            print(f"✅ Facebook Success: Post ID {fb_res['id']}")
-            # Success hone par hi list mein add karein
-            with open("posted.txt", "a") as f:
-                f.write(target_image + "\n")
+        if is_video:
+            # IG Reel
+            c_res = requests.post(f"{ig_base}/media", data={'media_type': 'REELS', 'video_url': media_url, 'caption': CAPTION, 'access_token': ACCESS_TOKEN}).json()
         else:
-            print(f"❌ Facebook Fail: {fb_res.get('error', {}).get('message')}")
-    except Exception as e:
-        print(f"❌ FB Exception: {e}")
+            # IG Photo
+            c_res = requests.post(f"{ig_base}/media", data={'image_url': media_url, 'caption': CAPTION, 'access_token': ACCESS_TOKEN}).json()
 
-    # --- 2. INSTAGRAM POST (URL Method) ---
-    if IG_ACCOUNT_ID and REPO:
-        # Public URL (Repo must be Public)
-        img_url = f"https://raw.githubusercontent.com/{REPO}/{BRANCH}/images/{target_image}"
-        
-        # Step A: Container
-        container_url = f"https://graph.facebook.com/v25.0/{IG_ACCOUNT_ID}/media"
-        c_payload = {'image_url': img_url, 'caption': CAPTION, 'access_token': ACCESS_TOKEN}
-        
-        try:
-            c_res = requests.post(container_url, data=c_payload).json()
-            if 'id' in c_res:
-                creation_id = c_res['id']
-                time.sleep(10) # Wait for processing
-                
-                # Step B: Publish
-                publish_url = f"https://graph.facebook.com/v25.0/{IG_ACCOUNT_ID}/media_publish"
-                p_res = requests.post(publish_url, data={'creation_id': creation_id, 'access_token': ACCESS_TOKEN}).json()
-                
-                if 'id' in p_res:
-                    print(f"✅ Instagram Success: Post ID {p_res['id']}")
-                else:
-                    print(f"❌ IG Publish Fail: {p_res.get('error', {}).get('message')}")
-            else:
-                print(f"❌ IG Container Fail: {c_res.get('error', {}).get('message')}")
-        except Exception as e:
-            print(f"❌ IG Exception: {e}")
+        if 'id' in c_res:
+            time.sleep(40 if is_video else 15) # Processing time
+            requests.post(f"{ig_base}/media_publish", data={'creation_id': c_res['id'], 'access_token': ACCESS_TOKEN})
+
+    if 'id' in res_fb:
+        print(f"✅ Success! Posted: {filename}")
+        with open("posted.txt", "a") as f:
+            f.write(filename + "\n")
+    else:
+        print(f"❌ FB Fail: {res_fb.get('error', {}).get('message')}")
 
 if __name__ == "__main__":
-    post_to_fb_and_ig()
+    post_content()
