@@ -3,6 +3,7 @@ import requests
 import time
 
 # --- CONFIG ---
+# Yahan check karein ki FB_PAGE_ID mil rahi hai ya nahi
 FB_PAGE_ID = os.environ.get("FB_PAGE_ID") 
 ACCESS_TOKEN = os.environ.get("FB_PAGE_TOKEN")
 IG_ACCOUNT_ID = os.environ.get("IG_ACCOUNT_ID")
@@ -17,9 +18,9 @@ def get_posted_files():
         return set(line.strip() for line in f)
 
 def reset_posted_files():
-    print("♻️ Sabhi content post ho chuka hai. List reset kar raha hoon taaki shuru se start ho sake...")
+    print("♻️ Sabhi content khatam! Shuru se shuru kar raha hoon...")
     with open("posted.txt", "w") as f:
-        f.write("") # File khali kar di
+        f.write("")
 
 def mark_as_posted(filename):
     with open("posted.txt", "a") as f:
@@ -27,8 +28,13 @@ def mark_as_posted(filename):
 
 def post_file(folder, filename):
     file_path = os.path.join(folder, filename)
-    is_video = filename.lower().endswith(('.mp4', '.mov', '.avi', '.mkv'))
+    is_video = filename.lower().endswith(('.mp4', '.mov', '.avi'))
     
+    # ID Check for Videos
+    if is_video and not FB_PAGE_ID:
+        print("❌ ERROR: Video ke liye FB_PAGE_ID secret zaroori hai!")
+        return False
+
     print(f"🚀 Processing {folder}: {filename} (Is Video: {is_video})")
     
     try:
@@ -68,50 +74,39 @@ def post_file(folder, filename):
 
 def main():
     posted = get_posted_files()
-    
-    # Folders define karein (Aapke mutabik 'video' aur 'images')
     folders = ['video', 'images']
     
-    # Sabhi pending files dhoondhein
-    pending_files = []
-    for folder in folders:
-        if os.path.exists(folder):
-            files = [os.path.join(folder, f) for f in sorted(os.listdir(folder)) if f not in posted and not f.startswith('.')]
-            pending_files.extend(files)
+    # Check what's left
+    pending = []
+    for fld in folders:
+        if os.path.exists(fld):
+            files = [os.path.join(fld, f) for f in sorted(os.listdir(fld)) if f not in posted and not f.startswith('.')]
+            pending.extend(files)
 
-    # RE-START LOGIC: Agar koi pending file nahi hai, toh reset karke dobara list banayein
-    if not pending_files:
+    # Infinite Loop Logic
+    if not pending:
         reset_posted_files()
-        posted = set() # Empty set for current run
-        for folder in folders:
-            if os.path.exists(folder):
-                files = [os.path.join(folder, f) for f in sorted(os.listdir(folder)) if not f.startswith('.')]
-                pending_files.extend(files)
+        posted = set()
+        for fld in folders:
+            if os.path.exists(fld):
+                files = [os.path.join(fld, f) for f in sorted(os.listdir(fld)) if not f.startswith('.')]
+                pending.extend(files)
 
-    # Posting Process
-    if pending_files:
-        # Ek run mein ek Video aur ek Image bhejte hain (taaki dono folders rotate hote rahein)
-        video_done = False
-        image_done = False
-        
-        for file_path in pending_files:
-            folder, filename = os.path.split(file_path)
+    if pending:
+        # Har run mein 1 Video aur 1 Image rotate hogi
+        v_done = False
+        i_done = False
+        for p_file in pending:
+            fld, fname = os.path.split(p_file)
+            if fld == 'video' and not v_done:
+                post_file(fld, fname)
+                v_done = True
+                time.sleep(30)
+            elif fld == 'images' and not i_done:
+                post_file(fld, fname)
+                i_done = True
             
-            if folder == 'video' and not video_done:
-                post_file(folder, filename)
-                video_done = True
-                print("⏳ 45 sec wait before image post...")
-                time.sleep(45)
-            
-            elif folder == 'images' and not image_done:
-                post_file(folder, filename)
-                image_done = True
-            
-            # Agar dono ho gaye toh bahar nikal jao
-            if video_done and image_done:
-                break
-    else:
-        print("⚠️ Folders khali hain! Please images/video folder mein content dalein.")
+            if v_done and i_done: break
 
 if __name__ == "__main__":
     main()
