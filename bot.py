@@ -22,8 +22,44 @@ def get_posted_files():
 def mark_as_posted(filename):
     with open("posted.txt", "a") as f: f.write(filename + "\n")
 
-def post_to_facebook(folder, filename, is_video):
+def post_to_instagram(folder, filename, is_video):
+    if not IG_ACCOUNT_ID: 
+        print("⚠️ Instagram ID missing, skipping IG...")
+        return False
     try:
+        ig_base = f"https://graph.facebook.com/v19.0/{IG_ACCOUNT_ID}"
+        media_url = f"https://raw.githubusercontent.com/{REPO}/main/{folder}/{filename}"
+        payload = {'caption': CAPTION, 'access_token': ACCESS_TOKEN}
+        
+        if is_video: 
+            payload.update({'media_type': 'REELS', 'video_url': media_url})
+        else: 
+            payload.update({'image_url': media_url})
+            
+        print(f"📸 Sending to Instagram: {filename}...")
+        c_res = requests.post(f"{ig_base}/media", data=payload).json()
+        
+        if 'id' in c_res:
+            creation_id = c_res['id']
+            # Instagram needs processing time
+            time.sleep(60 if is_video else 20)
+            p_res = requests.post(f"{ig_base}/media_publish", data={'creation_id': creation_id, 'access_token': ACCESS_TOKEN}).json()
+            if 'id' in p_res:
+                print(f"✅ Instagram Success: {filename}")
+                return True
+        
+        print(f"⚠️ Instagram Fail: {c_res.get('error', {}).get('message')}")
+        return False
+    except Exception as e:
+        print(f"❌ IG Exception: {e}")
+        return False
+
+def post_to_facebook(folder, filename, is_video):
+    if not FB_PAGE_ID:
+        print("⚠️ FB Page ID missing, skipping FB...")
+        return False
+    try:
+        print(f"🔵 Sending to Facebook: {filename}...")
         if is_video:
             fb_url = f"https://graph.facebook.com/v19.0/{FB_PAGE_ID}/videos"
             media_url = f"https://raw.githubusercontent.com/{REPO}/main/{folder}/{filename}"
@@ -44,54 +80,20 @@ def post_to_facebook(folder, filename, is_video):
         print(f"❌ FB Exception: {e}")
         return False
 
-def post_to_instagram(folder, filename, is_video):
-    if not IG_ACCOUNT_ID: return False
-    try:
-        ig_base = f"https://graph.facebook.com/v19.0/{IG_ACCOUNT_ID}"
-        media_url = f"https://raw.githubusercontent.com/{REPO}/main/{folder}/{filename}"
-        payload = {'caption': CAPTION, 'access_token': ACCESS_TOKEN}
-        if is_video: payload.update({'media_type': 'REELS', 'video_url': media_url})
-        else: payload.update({'image_url': media_url})
-            
-        c_res = requests.post(f"{ig_base}/media", data=payload).json()
-        if 'id' in c_res:
-            creation_id = c_res['id']
-            time.sleep(60 if is_video else 20)
-            p_res = requests.post(f"{ig_base}/media_publish", data={'creation_id': creation_id, 'access_token': ACCESS_TOKEN}).json()
-            if 'id' in p_res:
-                print(f"✅ Instagram Success: {filename}")
-                return True
-        print(f"⚠️ Instagram Fail: {c_res.get('error', {}).get('message')}")
-        return False
-    except Exception as e:
-        print(f"❌ IG Exception: {e}")
-        return False
-
 def main():
     posted = get_posted_files()
     v_folder, i_folder = 'video', 'images'
     
-    # 1. VIDEO ROTATION
+    # 1. VIDEO ROTATION (IG then FB)
     v_files = [f for f in sorted(os.listdir(v_folder)) if f not in posted and not f.startswith('.')] if os.path.exists(v_folder) else []
     if v_files:
         fname = v_files[0]
-        fb = post_to_facebook(v_folder, fname, True)
+        # Instagram First
         ig = post_to_instagram(v_folder, fname, True)
-        if fb or ig: mark_as_posted(fname)
+        # Then Facebook
+        fb = post_to_facebook(v_folder, fname, True)
+        if ig or fb: mark_as_posted(fname)
         time.sleep(30)
 
-    # 2. IMAGE ROTATION
+    # 2. IMAGE ROTATION (IG then FB)
     i_files = [f for f in sorted(os.listdir(i_folder)) if f not in posted and not f.startswith('.')] if os.path.exists(i_folder) else []
-    if i_files:
-        fname = i_files[0]
-        fb = post_to_facebook(i_folder, fname, False)
-        ig = post_to_instagram(i_folder, fname, False)
-        if fb or ig: mark_as_posted(fname)
-
-    # 3. AUTO-RESET LOGIC
-    if not v_files and not i_files:
-        print("♻️ All content posted. Resetting list...")
-        with open("posted.txt", "w") as f: f.write("")
-
-if __name__ == "__main__":
-    main()
