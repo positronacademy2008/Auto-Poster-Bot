@@ -29,7 +29,7 @@ def post_file(folder, filename):
         video_url = f"https://raw.githubusercontent.com/{REPO}/main/videos/{filename}"
         res_fb = requests.post(fb_url, data={'description': CAPTION, 'file_url': video_url, 'access_token': ACCESS_TOKEN}).json()
     else:
-        # Photo ke liye /me/ shortcut
+        # Photo ke liye /me/ shortcut (Jo aapka pehle work kar raha tha)
         fb_url = "https://graph.facebook.com/v19.0/me/photos"
         with open(file_path, 'rb') as f:
             res_fb = requests.post(fb_url, data={'caption': CAPTION, 'access_token': ACCESS_TOKEN}, files={'source': f}).json()
@@ -57,14 +57,18 @@ def post_file(folder, filename):
 def main():
     posted = get_posted_files()
     
-    # Dono folders se ek-ek file uthayega (Total 2 posts)
+    # Dono folders ko check karega aur har folder se ek-ek file post karega
     for folder in ['images', 'videos']:
         if os.path.exists(folder):
-            files = sorted([f for f in os.listdir(folder) if not f.startswith('.')])
-            for f in files:
-                if f not in posted:
-                    post_file(folder, f)
-                    break # Agle folder par jao
+            # Sirf wahi files jo posted.txt mein nahi hain
+            files_to_post = [f for f in sorted(os.listdir(folder)) if f not in posted and not f.startswith('.')]
+            
+            if files_to_post:
+                post_file(folder, files_to_post[0])
+                # Video upload mein time lagta hai isliye thoda break
+                if folder == 'images':
+                    print("⏳ Image post ho gayi, ab 30 second wait video ke liye...")
+                    time.sleep(30) 
 
 if __name__ == "__main__":
     main()
