@@ -97,3 +97,22 @@ def main():
 
     # 2. IMAGE ROTATION (IG then FB)
     i_files = [f for f in sorted(os.listdir(i_folder)) if f not in posted and not f.startswith('.')] if os.path.exists(i_folder) else []
+    if i_files:
+        fname = i_files[0]
+        # Instagram First
+        ig = post_to_instagram(i_folder, fname, False)
+        # Then Facebook
+        fb = post_to_facebook(i_folder, fname, False)
+        if ig or fb: mark_as_posted(fname)
+
+    # 3. AUTO-RESET LOGIC
+    # Re-check files to see if anything is left
+    still_pending_v = [f for f in sorted(os.listdir(v_folder)) if f not in get_posted_files() and not f.startswith('.')] if os.path.exists(v_folder) else []
+    still_pending_i = [f for f in sorted(os.listdir(i_folder)) if f not in get_posted_files() and not f.startswith('.')] if os.path.exists(i_folder) else []
+    
+    if not still_pending_v and not still_pending_i:
+        print("♻️ All content posted. Resetting list for next cycle...")
+        with open("posted.txt", "w") as f: f.write("")
+
+if __name__ == "__main__":
+    main()
