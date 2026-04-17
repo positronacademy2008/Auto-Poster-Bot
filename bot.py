@@ -22,44 +22,40 @@ def get_posted_files():
 def mark_as_posted(filename):
     with open("posted.txt", "a") as f: f.write(filename + "\n")
 
+def reset_list():
+    print("♻️ Sabhi content khatam ho chuka hai! List reset karke shuru se shuru kar raha hoon...")
+    if os.path.exists("posted.txt"):
+        os.remove("posted.txt")
+    with open("posted.txt", "w") as f:
+        f.write("")
+
 def post_to_instagram(folder, filename, is_video):
-    if not IG_ACCOUNT_ID: 
-        print("⚠️ Instagram ID missing, skipping IG...")
-        return False
+    if not IG_ACCOUNT_ID: return False
     try:
+        print(f"📸 Instagram: Sending {filename}...")
         ig_base = f"https://graph.facebook.com/v19.0/{IG_ACCOUNT_ID}"
         media_url = f"https://raw.githubusercontent.com/{REPO}/main/{folder}/{filename}"
         payload = {'caption': CAPTION, 'access_token': ACCESS_TOKEN}
-        
-        if is_video: 
-            payload.update({'media_type': 'REELS', 'video_url': media_url})
-        else: 
-            payload.update({'image_url': media_url})
+        if is_video: payload.update({'media_type': 'REELS', 'video_url': media_url})
+        else: payload.update({'image_url': media_url})
             
-        print(f"📸 Sending to Instagram: {filename}...")
         c_res = requests.post(f"{ig_base}/media", data=payload).json()
-        
         if 'id' in c_res:
             creation_id = c_res['id']
-            # Instagram needs processing time
-            time.sleep(60 if is_video else 20)
+            time.sleep(60 if is_video else 25)
             p_res = requests.post(f"{ig_base}/media_publish", data={'creation_id': creation_id, 'access_token': ACCESS_TOKEN}).json()
             if 'id' in p_res:
-                print(f"✅ Instagram Success: {filename}")
+                print(f"✅ Instagram Success!")
                 return True
-        
         print(f"⚠️ Instagram Fail: {c_res.get('error', {}).get('message')}")
         return False
     except Exception as e:
-        print(f"❌ IG Exception: {e}")
+        print(f"❌ IG Error: {e}")
         return False
 
 def post_to_facebook(folder, filename, is_video):
-    if not FB_PAGE_ID:
-        print("⚠️ FB Page ID missing, skipping FB...")
-        return False
     try:
-        print(f"🔵 Sending to Facebook: {filename}...")
+        print(f"🔵 Facebook: Sending {filename}...")
         if is_video:
             fb_url = f"https://graph.facebook.com/v19.0/{FB_PAGE_ID}/videos"
             media_url = f"https://raw.githubusercontent.com/{REPO}/main/{folder}/{filename}"
@@ -71,48 +67,54 @@ def post_to_facebook(folder, filename, is_video):
                 res = requests.post(fb_url, data={'caption': CAPTION, 'access_token': ACCESS_TOKEN}, files={'source': f}).json()
         
         if 'id' in res:
-            print(f"✅ Facebook Success: {filename}")
+            print(f"✅ Facebook Success!")
             return True
-        else:
-            print(f"⚠️ Facebook Fail: {res.get('error', {}).get('message')}")
-            return False
+        print(f"⚠️ Facebook Fail: {res.get('error', {}).get('message')}")
+        return False
     except Exception as e:
-        print(f"❌ FB Exception: {e}")
+        print(f"❌ FB Error: {e}")
         return False
 
 def main():
-    posted = get_posted_files()
     v_folder, i_folder = 'video', 'images'
+    posted = get_posted_files()
     
-    # 1. VIDEO ROTATION (IG then FB)
-    v_files = [f for f in sorted(os.listdir(v_folder)) if f not in posted and not f.startswith('.')] if os.path.exists(v_folder) else []
-    if v_files:
-        fname = v_files[0]
-        # Instagram First
+    # Extensions
+    v_ext = ('.mp4', '.mov', '.avi')
+    i_ext = ('.png', '.jpg', '.jpeg')
+
+    # Get all actual files in folders
+    all_v_files = [f for f in sorted(os.listdir(v_folder)) if f.lower().endswith(v_ext)] if os.path.exists(v_folder) else []
+    all_i_files = [f for f in sorted(os.listdir(i_folder)) if f.lower().endswith(i_ext)] if os.path.exists(i_folder) else []
+
+    # Get pending files
+    pending_v = [f for f in all_v_files if f not in posted]
+    pending_i = [f for f in all_i_files if f not in posted]
+
+    # --- RESTART LOGIC ---
+    # Agar folders mein files hain, lekin pendings khali hain -> Matlab sab post ho chuka hai!
+    if (all_v_files or all_i_files) and (not pending_v and not pending_i):
+        reset_list()
+        # Reload pending lists after reset
+        pending_v = all_v_files
+        pending_i = all_i_files
+
+    # 1. Post Video
+    if pending_v:
+        fname = pending_v[0]
+        print(f"🚀 Video Cycle: {fname}")
         ig = post_to_instagram(v_folder, fname, True)
-        # Then Facebook
         fb = post_to_facebook(v_folder, fname, True)
         if ig or fb: mark_as_posted(fname)
         time.sleep(30)
 
-    # 2. IMAGE ROTATION (IG then FB)
-    i_files = [f for f in sorted(os.listdir(i_folder)) if f not in posted and not f.startswith('.')] if os.path.exists(i_folder) else []
-    if i_files:
-        fname = i_files[0]
-        # Instagram First
+    # 2. Post Image
+    if pending_i:
+        fname = pending_i[0]
+        print(f"🚀 Image Cycle: {fname}")
         ig = post_to_instagram(i_folder, fname, False)
-        # Then Facebook
         fb = post_to_facebook(i_folder, fname, False)
         if ig or fb: mark_as_posted(fname)
-
-    # 3. AUTO-RESET LOGIC
-    # Re-check files to see if anything is left
-    still_pending_v = [f for f in sorted(os.listdir(v_folder)) if f not in get_posted_files() and not f.startswith('.')] if os.path.exists(v_folder) else []
-    still_pending_i = [f for f in sorted(os.listdir(i_folder)) if f not in get_posted_files() and not f.startswith('.')] if os.path.exists(i_folder) else []
-    
-    if not still_pending_v and not still_pending_i:
-        print("♻️ All content posted. Resetting list for next cycle...")
-        with open("posted.txt", "w") as f: f.write("")
 
 if __name__ == "__main__":
     main()
