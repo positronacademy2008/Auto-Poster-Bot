@@ -10,9 +10,10 @@ REPO = os.environ.get("GITHUB_REPOSITORY")
 
 CAPTION = (
     "Positron Academy Bhilwara 🚀\n"
-    "Admission Open for BSTC, B.Ed, D.Pharma!\n"
+    "Admission Open for BSTC, B.Ed, D.Pharma, and more!\n"
+    "📍 Pansal Choraya, Bhilwara\n"
     "📞 Contact: 8104894648\n\n"
-    "#PositronAcademy #Bhilwara #Education"
+    "#PositronAcademy #Bhilwara #AdmissionOpen #Education"
 )
 
 def get_posted_files():
@@ -21,11 +22,6 @@ def get_posted_files():
 
 def mark_as_posted(filename):
     with open("posted.txt", "a") as f: f.write(filename + "\n")
-
-def reset_list():
-    print("♻️ Sabhi content khatam! Restarting cycle...")
-    if os.path.exists("posted.txt"): os.remove("posted.txt")
-    with open("posted.txt", "w") as f: f.write("")
 
 def post_to_instagram(folder, filename, is_video):
     if not IG_ACCOUNT_ID: return False
@@ -41,22 +37,35 @@ def post_to_instagram(folder, filename, is_video):
         c_res = requests.post(f"{ig_base}/media", data=payload).json()
         if 'id' in c_res:
             creation_id = c_res['id']
-            if not is_video: # Images turant publish ho jati hain
-                time.sleep(20)
-                p_res = requests.post(f"{ig_base}/media_publish", data={'creation_id': creation_id, 'access_token': ACCESS_TOKEN}).json()
-                return 'id' in p_res
             
-            # Videos ke liye Wait Loop
-            for i in range(10): # Max 5 minutes wait
-                print(f"⏳ IG Video Processing... Attempt {i+1}")
+            # Images ke liye chota wait, Videos ke liye loop check
+            if not is_video:
                 time.sleep(30)
-                status_res = requests.get(f"https://graph.facebook.com/v19.0/{creation_id}?fields=status_code&access_token={ACCESS_TOKEN}").json()
-                if status_res.get('status_code') == 'FINISHED':
-                    print("✅ IG Video Ready! Publishing...")
-                    p_res = requests.post(f"{ig_base}/media_publish", data={'creation_id': creation_id, 'access_token': ACCESS_TOKEN}).json()
-                    return 'id' in p_res
+                p_res = requests.post(f"{ig_base}/media_publish", data={'creation_id': creation_id, 'access_token': ACCESS_TOKEN}).json()
+                if 'id' in p_res:
+                    print(f"✅ Instagram Image Success!")
+                    return True
+            else:
+                # Video (Reel) Processing Wait Loop
+                for i in range(10): # Max 5 minutes wait
+                    print(f"⏳ IG Video Processing... Attempt {i+1}/10")
+                    time.sleep(30)
+                    status_res = requests.get(f"https://graph.facebook.com/v19.0/{creation_id}?fields=status_code&access_token={ACCESS_TOKEN}").json()
+                    if status_res.get('status_code') == 'FINISHED':
+                        print("✅ IG Video Ready! Publishing now...")
+                        p_res = requests.post(f"{ig_base}/media_publish", data={'creation_id': creation_id, 'access_token': ACCESS_TOKEN}).json()
+                        if 'id' in p_res:
+                            print(f"✅ Instagram Reel Success!")
+                            return True
+                    elif status_res.get('status_code') == 'ERROR':
+                        print("❌ IG Processing Error.")
+                        return False
+        
+        print(f"⚠️ Instagram Fail: {c_res.get('error', {}).get('message')}")
         return False
-    except: return False
+    except Exception as e:
+        print(f"❌ IG Exception: {e}")
+        return False
 
 def post_to_facebook(folder, filename, is_video):
     if not FB_PAGE_ID: return False
@@ -69,7 +78,7 @@ def post_to_facebook(folder, filename, is_video):
             res = requests.post(fb_url, data={'description': CAPTION, 'file_url': media_url, 'access_token': ACCESS_TOKEN}).json()
         else:
             fb_url = f"https://graph.facebook.com/v19.0/{FB_PAGE_ID}/photos"
-            # Photos ke liye direct upload best hai
+            # Image ke liye local file upload zyada stable hai
             with open(os.path.join(folder, filename), 'rb') as f:
                 res = requests.post(fb_url, data={'caption': CAPTION, 'access_token': ACCESS_TOKEN}, files={'source': f}).json()
         
@@ -78,7 +87,9 @@ def post_to_facebook(folder, filename, is_video):
             return True
         print(f"⚠️ FB Fail: {res.get('error', {}).get('message')}")
         return False
-    except: return False
+    except Exception as e:
+        print(f"❌ FB Exception: {e}")
+        return False
 
 def main():
     v_f, i_f = 'video', 'images'
@@ -91,33 +102,40 @@ def main():
     pending_v = [f for f in all_v if f not in posted]
     pending_i = [f for f in all_i if f not in posted]
 
-    # Smart Restart: Jo khatam ho jaye use reset karo
+    # --- INDEPENDENT RESTART LOGIC ---
     if all_v and not pending_v:
-        print("🎬 Resetting Video Loop")
+        print("🎬 Resetting Video Loop...")
         posted = {f for f in posted if f not in all_v}
         pending_v = all_v
+    
     if all_i and not pending_i:
-        print("📸 Resetting Image Loop")
+        print("📸 Resetting Image Loop...")
         posted = {f for f in posted if f not in all_i}
         pending_i = all_i
 
-    # Update state
+    # Update state file before posting
     with open("posted.txt", "w") as f:
         for item in posted: f.write(item + "\n")
 
-    # Final Posting Order
+    # --- EXECUTION ---
+    video_done = False
     if pending_v:
-        fname = pending_v[0]
-        ig = post_to_instagram(v_f, fname, True)
-        fb = post_to_facebook(v_f, fname, True)
-        if ig or fb: mark_as_posted(fname)
-        time.sleep(10)
+        v_name = pending_v[0]
+        ig_v = post_to_instagram(v_f, v_name, True)
+        fb_v = post_to_facebook(v_f, v_name, True)
+        if ig_v or fb_v:
+            mark_as_posted(v_name)
+            video_done = True
+        
+        print("⏳ Waiting 60 seconds to avoid Instagram overlap...")
+        time.sleep(60)
 
     if pending_i:
-        fname = pending_i[0]
-        ig = post_to_instagram(i_f, fname, False)
-        fb = post_to_facebook(i_f, fname, False)
-        if ig or fb: mark_as_posted(fname)
+        i_name = pending_i[0]
+        ig_i = post_to_instagram(i_f, i_name, False)
+        fb_i = post_to_facebook(i_f, i_name, False)
+        if ig_i or fb_i:
+            mark_as_posted(i_name)
 
 if __name__ == "__main__":
     main()
