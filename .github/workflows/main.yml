@@ -2,13 +2,12 @@ name: Positron Academy Story Bot
 
 on:
   schedule:
-    - cron: '0 */3 * * *' # Har 3 ghante mein
-  workflow_dispatch: # Manual button ke liye
+    - cron: '0 */3 * * *'
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
@@ -19,9 +18,7 @@ jobs:
           python-version: '3.9'
 
       - name: Install Dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install requests Pillow
+        run: pip install requests Pillow
 
       - name: Run Auto Story Bot
         env:
@@ -30,11 +27,10 @@ jobs:
           IG_ACCOUNT_ID: ${{ secrets.IG_ACCOUNT_ID }}
         run: python bot.py
 
-      - name: Save & Upload Story for Meta URL
+      - name: Save Progress
         run: |
           git config --global user.name "github-actions"
           git config --global user.email "github-actions@github.com"
-          # temp_story.jpg ko add karna zaroori hai Meta ke liye
-          git add posted.txt temp_story.jpg
-          git commit -m "Update story media and progress [Skip CI]" || exit 0
+          git add posted.txt
+          git commit -m "Progress update [Skip CI]" || exit 0
           git push
