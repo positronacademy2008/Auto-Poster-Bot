@@ -1,96 +1,109 @@
 import os
 import requests
-import json
+import time
+from PIL import Image
+import io
+import base64
 
 # --- CONFIGURATION ---
 FB_PAGE_ID = os.environ.get("FB_PAGE_ID") 
 ACCESS_TOKEN = os.environ.get("FB_PAGE_TOKEN")
 IG_ACCOUNT_ID = os.environ.get("IG_ACCOUNT_ID")
+IMGBB_API_KEY = os.environ.get("IMGBB_API_KEY")
 
-def test_meta_permissions():
-    print("=========================================")
-    print("🔍 POSITRON ACADEMY - META DIAGNOSTIC BOT 🔍")
-    print("=========================================\n")
+def get_posted_files():
+    if not os.path.exists("posted.txt"): return set()
+    with open("posted.txt", "r") as f: return set(line.strip() for line in f)
 
-    # 1. Test Token Permissions
-    print("1️⃣ Testing Access Token Permissions...")
-    token_url = f"https://graph.facebook.com/v19.0/debug_token?input_token={ACCESS_TOKEN}&access_token={ACCESS_TOKEN}"
-    t_res = requests.get(token_url).json()
+def mark_as_posted(filename):
+    with open("posted.txt", "a") as f: f.write(filename + "\n")
+
+def process_and_get_url(input_path):
+    """Patti lagao aur direct URL lao (Fastest Method)"""
+    print(f"🎨 Image Processing (9:16 Padding): {input_path}")
+    img = Image.open(input_path).convert("RGB")
+    w, h = img.size
+    target_ratio = 9 / 16
     
-    if 'data' in t_res:
-        scopes = t_res['data'].get('scopes', [])
-        print(f"   ✅ Token is Valid.")
-        print(f"   ✅ Permissions Found: {len(scopes)}")
-        
-        # Check specific important ones
-        needed = ['pages_manage_posts', 'instagram_content_publish', 'pages_read_engagement']
-        for n in needed:
-            if n in scopes:
-                print(f"   🟢 Has: {n}")
-            else:
-                print(f"   🔴 MISSING: {n}")
-    else:
-        print(f"   ❌ Token Error: {t_res}")
-
-    print("\n-----------------------------------------")
-
-    # 2. Test Instagram Account Capabilities
-    print("2️⃣ Testing Instagram Account Capabilities...")
-    ig_info_url = f"https://graph.facebook.com/v19.0/{IG_ACCOUNT_ID}?fields=id,username,account_type&access_token={ACCESS_TOKEN}"
-    ig_res = requests.get(ig_info_url).json()
+    new_h = int(w / target_ratio) if (int(w / target_ratio) >= h) else h
+    new_w = int(h * target_ratio) if new_h == h else w
     
-    if 'username' in ig_res:
-        print(f"   ✅ Connected IG Account: @{ig_res['username']}")
+    new_img = Image.new('RGB', (new_w, new_h), (0, 0, 0))
+    new_img.paste(img, ((new_w - w) // 2, (new_h - h) // 2))
+    
+    img_byte_arr = io.BytesIO()
+    new_img.save(img_byte_arr, format='JPEG', quality=95)
+    img_b64 = base64.b64encode(img_byte_arr.getvalue()).decode('utf-8')
+    
+    print("☁️ Generating Live URL...")
+    res = requests.post(
+        f"https://api.imgbb.com/1/upload?key={IMGBB_API_KEY}",
+        data={'image': img_b64, 'expiration': 600} # 10 min auto-delete
+    ).json()
+    
+    if res.get('success'):
+        url = res['data']['display_url']
+        print(f"✅ URL Ready: {url}")
+        return url
+    return None
+
+def post_story(filename):
+    file_path = os.path.join('images', filename)
+    print(f"🚀 Started: {filename}")
+    
+    media_url = process_and_get_url(file_path)
+    if not media_url:
+        print("❌ URL Generation Failed. Skipping.")
+        return
+
+    # Chota wait taaki link internet par active ho jaye
+    time.sleep(10)
+
+    try:
+        # --- INSTAGRAM STORY ---
+        print("🤳 IG Story: Uploading...")
+        ig_res = requests.post(f"https://graph.facebook.com/v19.0/{IG_ACCOUNT_ID}/media", 
+            data={'media_type': 'STORY', 'image_url': media_url, 'access_token': ACCESS_TOKEN}).json()
         
-        # Test if the endpoint accepts STORY media type (Dry Run)
-        print("   ⏳ Testing STORY endpoint directly...")
-        test_payload = {
-            'media_type': 'STORY',
-            'image_url': 'https://upload.wikimedia.org/wikipedia/commons/ca/ca.jpg', # Valid public URL
-            'access_token': ACCESS_TOKEN
-        }
-        
-        # We expect a failure because it's a dummy image, BUT we check the ERROR TYPE
-        dry_run = requests.post(f"https://graph.facebook.com/v19.0/{IG_ACCOUNT_ID}/media", data=test_payload).json()
-        
-        error_msg = dry_run.get('error', {}).get('message', '')
-        
-        if "STORY\" is unknown" in error_msg:
-            print("   🔴 CRITICAL FAILURE: Your Instagram account/app is NOT PERMITTED to post Stories.")
-            print("      Solution: Your Instagram MUST be a 'Business' account, NOT a 'Creator' account.")
-        elif "Invalid parameter" in error_msg:
-            print("   ⚠️ WARNING: Story Endpoint is open, but it rejected the format.")
+        if 'id' in ig_res:
+            time.sleep(20) # Processing buffer
+            pub = requests.post(f"https://graph.facebook.com/v19.0/{IG_ACCOUNT_ID}/media_publish", 
+                data={'creation_id': ig_res['id'], 'access_token': ACCESS_TOKEN}).json()
+            if 'id' in pub: print("✅ IG Story LIVE!")
+            else: print(f"❌ IG Publish Fail: {pub}")
         else:
-            print(f"   ℹ️ Meta Response: {dry_run}")
-            
-    else:
-        print(f"   ❌ IG Account Error: {ig_res}")
+            print(f"❌ IG Error: {ig_res.get('error', {}).get('message')}")
 
-    print("\n-----------------------------------------")
-
-    # 3. Test Facebook Page Capabilities
-    print("3️⃣ Testing Facebook Page Capabilities...")
-    fb_info_url = f"https://graph.facebook.com/v19.0/{FB_PAGE_ID}?fields=id,name,access_token&access_token={ACCESS_TOKEN}"
-    fb_res = requests.get(fb_info_url).json()
-
-    if 'name' in fb_res:
-        print(f"   ✅ Connected FB Page: {fb_res['name']}")
+        # --- FACEBOOK STORY ---
+        print("🎬 FB Story: Uploading...")
+        fb_res = requests.post(f"https://graph.facebook.com/v19.0/{FB_PAGE_ID}/photo_stories", 
+            data={'url': media_url, 'access_token': ACCESS_TOKEN}).json()
         
-        print("   ⏳ Testing FB Photo Story endpoint...")
-        # Dry run for FB
-        fb_dry_run = requests.post(f"https://graph.facebook.com/v19.0/{FB_PAGE_ID}/photo_stories", 
-            data={'url': 'https://upload.wikimedia.org/wikipedia/commons/ca/ca.jpg', 'access_token': ACCESS_TOKEN}).json()
-        
-        err = fb_dry_run.get('error', {}).get('message', '')
-        if err:
-            print(f"   🔴 FB Story Post Error: {err}")
-            print(f"   ℹ️ Full details: {fb_dry_run}")
-    else:
-        print(f"   ❌ FB Page Error: {fb_res}")
+        if 'id' in fb_res: 
+            print("✅ FB Story LIVE!")
+        else: 
+            print(f"❌ FB Error: {fb_res.get('error', {}).get('message')}")
 
-    print("\n=========================================")
-    print("📋 END OF DIAGNOSTICS")
-    print("=========================================")
+    except Exception as e: print(f"❌ Crash Error: {e}")
+
+def main():
+    if not IMGBB_API_KEY:
+        print("⚠️ Secret 'IMGBB_API_KEY' is missing!")
+        return
+
+    if os.path.exists('images'):
+        posted = get_posted_files()
+        all_files = [f for f in sorted(os.listdir('images')) if f.lower().endswith(('.png', '.jpg', '.jpeg'))]
+        pending = [f for f in all_files if f not in posted]
+        
+        if all_files and not pending:
+            print("♻️ List Finished. Resetting...")
+            if os.path.exists("posted.txt"): os.remove("posted.txt")
+            pending = all_files
+
+        if pending:
+            post_story(pending[0])
+            mark_as_posted(pending[0])
 
 if __name__ == "__main__":
-    test_meta_permissions()
+    main()
