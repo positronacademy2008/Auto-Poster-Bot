@@ -20,19 +20,18 @@ jobs:
       - name: Install Dependencies
         run: pip install requests Pillow
 
-      - name: Run Auto Story Bot & Upload Image
+      - name: Run Story Bot
         env:
           FB_PAGE_ID: ${{ secrets.FB_PAGE_ID }}
           FB_PAGE_TOKEN: ${{ secrets.FB_PAGE_TOKEN }}
           IG_ACCOUNT_ID: ${{ secrets.IG_ACCOUNT_ID }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          IMGBB_API_KEY: ${{ secrets.IMGBB_API_KEY }}
+        run: python bot.py
+
+      - name: Save Progress
         run: |
-          # Step 1: Run Python script. Script will create 'story_XYZ.jpg'
-          python bot.py
-          
-          # Step 2: Push changes to Github immediately so the URL becomes active
           git config --global user.name "github-actions"
           git config --global user.email "github-actions@github.com"
-          git add posted.txt story_*.jpg
-          git commit -m "Progress update and new story upload [Skip CI]" || exit 0
+          git add posted.txt
+          git commit -m "Story posted! Progress updated [Skip CI]" || exit 0
           git push
