@@ -3,13 +3,11 @@ import requests
 import time
 from PIL import Image
 import io
-import base64
 
 # --- CONFIGURATION ---
 FB_PAGE_ID = os.environ.get("FB_PAGE_ID") 
 ACCESS_TOKEN = os.environ.get("FB_PAGE_TOKEN")
 IG_ACCOUNT_ID = os.environ.get("IG_ACCOUNT_ID")
-IMGBB_API_KEY = os.environ.get("IMGBB_API_KEY")
 
 def get_posted_files():
     if not os.path.exists("posted.txt"): return set()
@@ -18,9 +16,8 @@ def get_posted_files():
 def mark_as_posted(filename):
     with open("posted.txt", "a") as f: f.write(filename + "\n")
 
-def process_and_upload_to_imgbb(input_path):
-    """Patti lagao aur imgbb par direct raw link lo"""
-    print(f"🎨 Processing Image: {input_path}")
+def get_padded_image_bytes(input_path):
+    """Patti laga kar virtual file banata hai"""
     img = Image.open(input_path).convert("RGB")
     w, h = img.size
     target_ratio = 9 / 16
@@ -31,66 +28,65 @@ def process_and_upload_to_imgbb(input_path):
     new_img.paste(img, ((new_w - w) // 2, (new_h - h) // 2))
     
     img_byte_arr = io.BytesIO()
-    new_img.save(img_byte_arr, format='JPEG')
-    img_b64 = base64.b64encode(img_byte_arr.getvalue()).decode('utf-8')
-    
-    print("☁️ Uploading to ImgBB...")
-    res = requests.post(
-        f"https://api.imgbb.com/1/upload?key={IMGBB_API_KEY}",
-        data={'image': img_b64, 'expiration': 600}
-    ).json()
-    
-    if res.get('success'):
-        # CRITICAL FIX: Extracting the DIRECT display URL, not the viewing page URL
-        direct_url = res['data']['display_url'] 
-        print(f"✅ Direct ImgBB URL Ready: {direct_url}")
-        return direct_url
-    else:
-        print(f"❌ ImgBB Error: {res}")
-        return None
+    # Save with highest quality to trick Meta's filter
+    new_img.save(img_byte_arr, format='JPEG', quality=100)
+    # Move pointer to beginning of file
+    img_byte_arr.seek(0)
+    return img_byte_arr
 
 def post_story(filename):
     file_path = os.path.join('images', filename)
-    media_url = process_and_upload_to_imgbb(file_path)
+    print(f"🚀 Processing: {filename}")
     
-    if not media_url:
-        print("⚠️ Skipping Meta upload due to ImgBB failure.")
-        return
-
-    # Chota wait taaki ImgBB ka link global servers par poori tarah propagate ho jaye
-    print("⏳ Waiting 15 seconds for ImgBB link propagation...")
-    time.sleep(15)
+    # Ye bytes nahi hain, ek virtual file object hai!
+    image_file = get_padded_image_bytes(file_path)
 
     try:
-        # --- IG STORY ---
-        print(f"🤳 IG Story: Sending Direct URL to Meta...")
-        ig_res = requests.post(f"https://graph.facebook.com/v19.0/{IG_ACCOUNT_ID}/media", 
-            data={'media_type': 'STORY', 'image_url': media_url, 'access_token': ACCESS_TOKEN}).json()
+        # --- FACEBOOK STORY (FormData approach) ---
+        print("🎬 FB Story: Uploading File Form Data...")
+        fb_url = f"https://graph.facebook.com/v19.0/{FB_PAGE_ID}/photo_stories"
+        # Bhejne ka tareeka badla hai: 'source' ke andar proper file format diya hai
+        fb_res = requests.post(
+            fb_url, 
+            data={'access_token': ACCESS_TOKEN},
+            files={'source': ('story.jpg', image_file, 'image/jpeg')}
+        ).json()
         
+        if 'id' in fb_res: 
+            print("✅ FB Story Live!")
+        else: 
+            print(f"❌ FB Fail: {fb_res}")
+
+        # Resetting file pointer for next upload
+        image_file.seek(0)
+
+        # --- INSTAGRAM STORY (Reel API as fallback) ---
+        # Note: Instagram ki Story API direct Form Data mana karti hai!
+        # Isliye hum Instagram Feed/Reel endpoint use kar rahe hain test ke liye.
+        # Agar error solve ho gaya tab hum wapis Story endpoint daalenge.
+        print("🤳 IG Post: Uploading as Feed (To bypass Story Filter)...")
+        ig_url = f"https://graph.facebook.com/v19.0/{IG_ACCOUNT_ID}/media"
+        # Is test mein hum image_url nahi, seedha media dalenge
+        ig_res = requests.post(
+            ig_url,
+            data={'caption': 'Positron Academy Admission Open!', 'access_token': ACCESS_TOKEN},
+            files={'image': ('story.jpg', image_file, 'image/jpeg')}
+        ).json()
+
         if 'id' in ig_res:
-            print("⏳ IG processing the URL...")
-            time.sleep(20) 
+            time.sleep(20)
             pub = requests.post(f"https://graph.facebook.com/v19.0/{IG_ACCOUNT_ID}/media_publish", 
                 data={'creation_id': ig_res['id'], 'access_token': ACCESS_TOKEN}).json()
-            if 'id' in pub: print("✅ IG Story Live!")
-            else: print(f"❌ IG Publish Fail: {pub}")
+            if 'id' in pub: 
+                print("✅ IG Media Live!")
+            else: 
+                print(f"❌ IG Publish Fail: {pub}")
         else:
-            print(f"❌ IG Fail: {ig_res.get('error', {}).get('message')}")
-
-        # --- FB STORY ---
-        print(f"🎬 FB Story: Sending Direct URL to Meta...")
-        fb_res = requests.post(f"https://graph.facebook.com/v19.0/{FB_PAGE_ID}/photo_stories", 
-            data={'url': media_url, 'access_token': ACCESS_TOKEN}).json()
-        if 'id' in fb_res: print("✅ FB Story Live!")
-        else: print(f"❌ FB Fail: {fb_res.get('error', {}).get('message')}")
+            print(f"❌ IG Fail: {ig_res}")
 
     except Exception as e: print(f"❌ Error: {e}")
 
 def main():
-    if not IMGBB_API_KEY:
-        print("⚠️ Secret 'IMGBB_API_KEY' is missing! Check GitHub Secrets.")
-        return
-
     if os.path.exists('images'):
         posted = get_posted_files()
         all_files = [f for f in sorted(os.listdir('images')) if f.lower().endswith(('.png', '.jpg', '.jpeg'))]
@@ -101,7 +97,6 @@ def main():
             pending = all_files
 
         if pending:
-            print(f"🚀 Current File: {pending[0]}")
             post_story(pending[0])
             mark_as_posted(pending[0])
 
