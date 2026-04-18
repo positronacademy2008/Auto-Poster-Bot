@@ -2,8 +2,8 @@ name: Positron Academy Story Bot
 
 on:
   schedule:
-    - cron: '0 */3 * * *'
-  workflow_dispatch:
+    - cron: '0 */3 * * *' # Har 3 ghante mein
+  workflow_dispatch: # Manual button ke liye
 
 jobs:
   build:
@@ -30,11 +30,11 @@ jobs:
           IG_ACCOUNT_ID: ${{ secrets.IG_ACCOUNT_ID }}
         run: python bot.py
 
-      - name: Save & Upload Story for Meta (CRITICAL)
+      - name: Save & Upload Story for Meta URL
         run: |
           git config --global user.name "github-actions"
           git config --global user.email "github-actions@github.com"
-          # Yahan temp_story.jpg ko add karna zaroori hai
+          # temp_story.jpg ko add karna zaroori hai Meta ke liye
           git add posted.txt temp_story.jpg
-          git commit -m "Upload resized story for Meta URL [Skip CI]" || exit 0
+          git commit -m "Update story media and progress [Skip CI]" || exit 0
           git push
