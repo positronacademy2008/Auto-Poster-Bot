@@ -29,65 +29,69 @@ def post_to_instagram(folder, filename, is_video):
         ig_base = f"https://graph.facebook.com/v19.0/{IG_ACCOUNT_ID}"
         media_url = f"https://raw.githubusercontent.com/{REPO}/main/{folder}/{filename}"
         
-        # --- IG Feed/Reel ---
+        # 1. Feed/Reel Post
         print(f"📸 IG Feed/Reel: Uploading {filename}...")
         payload = {'caption': CAPTION, 'access_token': ACCESS_TOKEN}
         if is_video: payload.update({'media_type': 'REELS', 'video_url': media_url})
         else: payload.update({'image_url': media_url})
+        
         c_res = requests.post(f"{ig_base}/media", data=payload).json()
         if 'id' in c_res:
-            creation_id = c_res['id']
-            for i in range(10):
+            c_id = c_res['id']
+            for i in range(8): # Wait for finish
                 time.sleep(30)
-                status = requests.get(f"https://graph.facebook.com/v19.0/{creation_id}?fields=status_code&access_token={ACCESS_TOKEN}").json().get('status_code')
+                status = requests.get(f"https://graph.facebook.com/v19.0/{c_id}?fields=status_code&access_token={ACCESS_TOKEN}").json().get('status_code')
                 if status == 'FINISHED':
-                    requests.post(f"{ig_base}/media_publish", data={'creation_id': creation_id, 'access_token': ACCESS_TOKEN})
-                    print(f"✅ IG Feed/Reel Success!")
+                    requests.post(f"{ig_base}/media_publish", data={'creation_id': c_id, 'access_token': ACCESS_TOKEN})
+                    print("✅ IG Post Live!")
                     break
 
-        # --- IG Story ---
+        # 2. Instagram Story (Wait & Check)
         print(f"🤳 IG Story: Uploading {filename}...")
-        story_payload = {'media_type': 'STORY', 'access_token': ACCESS_TOKEN}
-        if is_video: story_payload.update({'video_url': media_url})
-        else: story_payload.update({'image_url': media_url})
-        s_res = requests.post(f"{ig_base}/media", data=story_payload).json()
+        s_payload = {'media_type': 'STORY', 'access_token': ACCESS_TOKEN}
+        if is_video: s_payload.update({'video_url': media_url})
+        else: s_payload.update({'image_url': media_url})
+        
+        s_res = requests.post(f"{ig_base}/media", data=s_payload).json()
         if 'id' in s_res:
-            time.sleep(30)
-            requests.post(f"{ig_base}/media_publish", data={'creation_id': s_res['id'], 'access_token': ACCESS_TOKEN})
-            print(f"✅ IG Story Success!")
-    except: pass
+            s_id = s_res['id']
+            time.sleep(45) # Stories need time to process
+            pub = requests.post(f"{ig_base}/media_publish", data={'creation_id': s_id, 'access_token': ACCESS_TOKEN}).json()
+            if 'id' in pub: print("✅ IG Story Live!")
+            else: print(f"⚠️ IG Story Publish Fail: {pub.get('error', {}).get('message')}")
+        else: print(f"⚠️ IG Story Upload Fail: {s_res.get('error', {}).get('message')}")
+            
+    except Exception as e: print(f"❌ IG Error: {e}")
 
 def post_to_facebook(folder, filename, is_video):
     if not FB_PAGE_ID: return False
     try:
         media_url = f"https://raw.githubusercontent.com/{REPO}/main/{folder}/{filename}"
         
-        # --- FB Page Post ---
+        # 1. FB Page Post
         print(f"🔵 FB Post: Uploading {filename}...")
+        fb_url = f"https://graph.facebook.com/v19.0/{FB_PAGE_ID}/{'videos' if is_video else 'photos'}"
         if is_video:
-            fb_url = f"https://graph.facebook.com/v19.0/{FB_PAGE_ID}/videos"
             requests.post(fb_url, data={'description': CAPTION, 'file_url': media_url, 'access_token': ACCESS_TOKEN})
         else:
-            fb_url = f"https://graph.facebook.com/v19.0/{FB_PAGE_ID}/photos"
             with open(os.path.join(folder, filename), 'rb') as f:
                 requests.post(fb_url, data={'caption': CAPTION, 'access_token': ACCESS_TOKEN}, files={'source': f})
-        print(f"✅ FB Post Success!")
+        print("✅ FB Post Sent!")
 
-        # --- FB Story (Experimental API Support) ---
-        # Note: FB Story API requires specific Page permissions. If it fails, the rest will still work.
-        print(f"🎬 FB Story: Attempting {filename}...")
-        fb_story_url = f"https://graph.facebook.com/v19.0/{FB_PAGE_ID}/video_stories" if is_video else f"https://graph.facebook.com/v19.0/{FB_PAGE_ID}/photo_stories"
-        story_data = {'access_token': ACCESS_TOKEN}
-        if is_video: story_data['video_url'] = media_url
-        else: story_data['url'] = media_url
-        requests.post(fb_story_url, data=story_data)
-        print(f"✅ FB Story Processed!")
+        # 2. FB Story (Using Photo/Video Story API)
+        print(f"🎬 FB Story: Uploading {filename}...")
+        # Note: FB Story API is sometimes restricted, this uses the most common endpoint
+        story_url = f"https://graph.facebook.com/v19.0/{FB_PAGE_ID}/photo_stories"
+        if not is_video:
+            s_res = requests.post(story_url, data={'url': media_url, 'access_token': ACCESS_TOKEN}).json()
+            if 'id' in s_res: print("✅ FB Photo Story Live!")
+            else: print(f"⚠️ FB Story Fail: {s_res.get('error', {}).get('message')}")
         
-    except: pass
+    except Exception as e: print(f"❌ FB Error: {e}")
 
 def main():
     v_f, i_f = 'video', 'images'
-    v_ext, i_ext = ('.mp4', '.mov', '.avi'), ('.png', '.jpg', '.jpeg')
+    v_ext, i_ext = ('.mp4', '.mov'), ('.png', '.jpg', '.jpeg')
     posted = get_posted_files()
 
     all_v = [f for f in sorted(os.listdir(v_f)) if f.lower().endswith(v_ext)] if os.path.exists(v_f) else []
@@ -96,6 +100,7 @@ def main():
     pending_v = [f for f in all_v if f not in posted]
     pending_i = [f for f in all_i if f not in posted]
 
+    # Restart Logics
     if all_v and not pending_v:
         posted = {f for f in posted if f not in all_v}
         pending_v = all_v
