@@ -1,37 +1,37 @@
-name: Positron Academy Story Bot
+name: Positron Non-Stop Poster
 
 on:
   schedule:
-    - cron: '0 */3 * * *'
-  workflow_dispatch:
+    - cron: '30 1 * * *' # Subah 7:00 AM IST
+    - cron: '30 12 * * *' # Shaam 6:30 PM IST
+  workflow_dispatch: # Manual Button
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v4 # Updated to v4
+        uses: actions/checkout@v3
 
-      - name: Setup Python
-        uses: actions/setup-python@v5 # Updated to v5
+      - name: Set up Python
+        uses: actions/setup-python@v4
         with:
           python-version: '3.9'
 
       - name: Install Dependencies
-        run: pip install requests Pillow
+        run: pip install requests
 
-      - name: Run Story Bot
+      - name: Run Bot
         env:
-          FB_PAGE_ID: ${{ secrets.FB_PAGE_ID }}
           FB_PAGE_TOKEN: ${{ secrets.FB_PAGE_TOKEN }}
           IG_ACCOUNT_ID: ${{ secrets.IG_ACCOUNT_ID }}
-          IMGBB_API_KEY: ${{ secrets.IMGBB_API_KEY }}
+          FB_PAGE_ID: ${{ secrets.FB_PAGE_ID }}
         run: python bot.py
 
-      - name: Save Progress
+      - name: Commit and Push Progress
         run: |
           git config --global user.name "github-actions"
           git config --global user.email "github-actions@github.com"
           git add posted.txt
-          git commit -m "Story posted! Progress updated [Skip CI]" || exit 0
+          git commit -m "Auto-update posted.txt [Skip CI]" || exit 0
           git push
