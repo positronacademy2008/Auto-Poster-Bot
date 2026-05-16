@@ -10,7 +10,7 @@ REPO = os.environ.get("GITHUB_REPOSITORY")
 
 CAPTION = (
     "Positron Academy Bhilwara 🚀\n"
-    "Admission Open for BSTC, B.Ed, D.Pharma, and more!\n"
+    "Admission Open for BPED, BSTC, B.Ed, D.Pharma, DPED and more!\n"
     "📍 Pansal Choraya, Bhilwara\n"
     "📞 Contact: 8104894648\n\n"
     "#PositronAcademy #Bhilwara #AdmissionOpen #Education"
