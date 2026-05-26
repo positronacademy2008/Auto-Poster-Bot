@@ -27,8 +27,8 @@ def post_to_instagram(folder, filename, is_video):
     if not IG_ACCOUNT_ID: return False
     try:
         print(f"📸 Instagram: Uploading {filename}...")
-        # STABLE V20.0 ENDPOINT
-        ig_base = f"https://graph.facebook.com/v20.0/{IG_ACCOUNT_ID}"
+        # STABLE V19.0 ENDPOINT
+        ig_base = f"https://graph.facebook.com/v19.0/{IG_ACCOUNT_ID}"
         media_url = f"https://raw.githubusercontent.com/{REPO}/main/{folder}/{filename}"
         
         payload = {'caption': CAPTION, 'access_token': ACCESS_TOKEN}
@@ -53,8 +53,8 @@ def post_to_instagram(folder, filename, is_video):
                     print(f"⏳ IG Video Processing... Attempt {i+1}/15")
                     time.sleep(30)
                     
-                    # STABLE V20.0 STATUS CHECK
-                    status_res = requests.get(f"https://graph.facebook.com/v20.0/{creation_id}?fields=status_code&access_token={ACCESS_TOKEN}").json()
+                    # STABLE V19.0 STATUS CHECK
+                    status_res = requests.get(f"https://graph.facebook.com/v19.0/{creation_id}?fields=status_code&access_token={ACCESS_TOKEN}").json()
                     status_code = status_res.get('status_code')
                     
                     if status_code == 'FINISHED':
@@ -80,12 +80,12 @@ def post_to_facebook(folder, filename, is_video):
         media_url = f"https://raw.githubusercontent.com/{REPO}/main/{folder}/{filename}"
         
         if is_video:
-            # STABLE V20.0 ENDPOINT FOR FB VIDEO
-            fb_url = f"https://graph.facebook.com/v20.0/{FB_PAGE_ID}/videos"
+            # STABLE V19.0 ENDPOINT FOR FB VIDEO
+            fb_url = f"https://graph.facebook.com/v19.0/{FB_PAGE_ID}/videos"
             res = requests.post(fb_url, data={'description': CAPTION, 'file_url': media_url, 'access_token': ACCESS_TOKEN}).json()
         else:
-            # STABLE V20.0 ENDPOINT FOR FB PHOTO
-            fb_url = f"https://graph.facebook.com/v20.0/{FB_PAGE_ID}/photos"
+            # STABLE V19.0 ENDPOINT FOR FB PHOTO
+            fb_url = f"https://graph.facebook.com/v19.0/{FB_PAGE_ID}/photos"
             with open(os.path.join(folder, filename), 'rb') as f:
                 res = requests.post(fb_url, data={'caption': CAPTION, 'access_token': ACCESS_TOKEN}, files={'source': f}).json()
         
