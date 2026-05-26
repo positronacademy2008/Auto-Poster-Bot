@@ -27,8 +27,7 @@ def post_to_instagram(folder, filename, is_video):
     if not IG_ACCOUNT_ID: return False
     try:
         print(f"📸 Instagram: Uploading {filename}...")
-        # STABLE V19.0 ENDPOINT
-        ig_base = f"https://graph.facebook.com/v19.0/{IG_ACCOUNT_ID}"
+        ig_base = f"https://graph.facebook.com/v20.0/{IG_ACCOUNT_ID}"
         media_url = f"https://raw.githubusercontent.com/{REPO}/main/{folder}/{filename}"
         
         payload = {'caption': CAPTION, 'access_token': ACCESS_TOKEN}
@@ -46,15 +45,14 @@ def post_to_instagram(folder, filename, is_video):
                 if 'id' in p_res:
                     print(f"✅ Instagram Image Success!")
                     return True
-            # --- VIDEO (REEL) PUBLISH ---
+            # --- VIDEO (REEL) PUBLISH WITH BYPASS ---
             else:
-                # 15 Attempts aur 30 seconds wait (Total 7.5 mins buffer for stable processing)
+                video_published = False
                 for i in range(15): 
                     print(f"⏳ IG Video Processing... Attempt {i+1}/15")
                     time.sleep(30)
                     
-                    # STABLE V19.0 STATUS CHECK
-                    status_res = requests.get(f"https://graph.facebook.com/v19.0/{creation_id}?fields=status_code&access_token={ACCESS_TOKEN}").json()
+                    status_res = requests.get(f"https://graph.facebook.com/v20.0/{creation_id}?fields=status_code&access_token={ACCESS_TOKEN}").json()
                     status_code = status_res.get('status_code')
                     
                     if status_code == 'FINISHED':
@@ -63,11 +61,23 @@ def post_to_instagram(folder, filename, is_video):
                         if 'id' in p_res:
                             print(f"✅ Instagram Reel Success!")
                             return True
+                        video_published = True
+                        break
                     elif status_code == 'ERROR':
                         print(f"❌ IG Processing Error: {status_res}")
                         return False
+                
+                # --- FORCE PUBLISH BYPASS ---
+                if not video_published:
+                    print("⏳ Timeout reached, but Meta has the file. Trying a Force Publish anyway...")
+                    p_res = requests.post(f"{ig_base}/media_publish", data={'creation_id': creation_id, 'access_token': ACCESS_TOKEN}).json()
+                    if 'id' in p_res:
+                        print(f"✅ Instagram Reel Success via Force Publish!")
+                        return True
+                    else:
+                        print(f"⚠️ Force Publish also skipped or failed: {p_res}")
         
-        print(f"⚠️ Instagram Fail: {c_res.get('error', {}).get('message', c_res)}")
+        print(f"⚠️ Instagram Fail Response: {c_res.get('error', {}).get('message', c_res)}")
         return False
     except Exception as e:
         print(f"❌ IG Exception: {e}")
@@ -80,12 +90,10 @@ def post_to_facebook(folder, filename, is_video):
         media_url = f"https://raw.githubusercontent.com/{REPO}/main/{folder}/{filename}"
         
         if is_video:
-            # STABLE V19.0 ENDPOINT FOR FB VIDEO
-            fb_url = f"https://graph.facebook.com/v19.0/{FB_PAGE_ID}/videos"
+            fb_url = f"https://graph.facebook.com/v20.0/{FB_PAGE_ID}/videos"
             res = requests.post(fb_url, data={'description': CAPTION, 'file_url': media_url, 'access_token': ACCESS_TOKEN}).json()
         else:
-            # STABLE V19.0 ENDPOINT FOR FB PHOTO
-            fb_url = f"https://graph.facebook.com/v19.0/{FB_PAGE_ID}/photos"
+            fb_url = f"https://graph.facebook.com/v20.0/{FB_PAGE_ID}/photos"
             with open(os.path.join(folder, filename), 'rb') as f:
                 res = requests.post(fb_url, data={'caption': CAPTION, 'access_token': ACCESS_TOKEN}, files={'source': f}).json()
         
@@ -123,23 +131,38 @@ def main():
     with open("posted.txt", "w") as f:
         for item in posted: f.write(item + "\n")
 
-    # --- EXECUTION ---
-    if pending_v:
-        v_name = pending_v[0]
-        ig_v = post_to_instagram(v_f, v_name, True)
-        fb_v = post_to_facebook(v_f, v_name, True)
-        if ig_v or fb_v:
-            mark_as_posted(v_name)
-        
-        print("⏳ Waiting 60 seconds to avoid Instagram overlap...")
-        time.sleep(60)
-
+    # --- NEW ORDERED EXECUTION ---
+    
+    # 1. FACEBOOK IMAGE
+    fb_i_success = False
     if pending_i:
         i_name = pending_i[0]
-        ig_i = post_to_instagram(i_f, i_name, False)
-        fb_i = post_to_facebook(i_f, i_name, False)
-        if ig_i or fb_i:
+        fb_i_success = post_to_facebook(i_f, i_name, False)
+        
+        # 2. INSTAGRAM IMAGE (Facebook Image ke baad)
+        print("⏳ Waiting 15 seconds before hitting Instagram Image...")
+        time.sleep(15)
+        ig_i_success = post_to_instagram(i_f, i_name, False)
+        
+        if fb_i_success or ig_i_success:
             mark_as_posted(i_name)
+            
+        print("⏳ Waiting 30 seconds buffer before launching Video logic...")
+        time.sleep(30)
+
+    # 3. FACEBOOK VIDEO
+    fb_v_success = False
+    if pending_v:
+        v_name = pending_v[0]
+        fb_v_success = post_to_facebook(v_f, v_name, True)
+        
+        # 4. INSTAGRAM VIDEO (Sabse aakhiri mein, taaki loop yahan chale)
+        print("⏳ Waiting 30 seconds before launching Instagram Video loop...")
+        time.sleep(30)
+        ig_v_success = post_to_instagram(v_f, v_name, True)
+        
+        if fb_v_success or ig_v_success:
+            mark_as_posted(v_name)
 
 if __name__ == "__main__":
     main()
