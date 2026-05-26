@@ -27,7 +27,7 @@ def post_to_instagram(folder, filename, is_video):
     if not IG_ACCOUNT_ID: return False
     try:
         print(f"📸 Instagram: Uploading {filename}...")
-        ig_base = f"https://graph.facebook.com/v19.0/{IG_ACCOUNT_ID}"
+        ig_base = f"https://graph.facebook.com/v25.0/{IG_ACCOUNT_ID}"
         media_url = f"https://raw.githubusercontent.com/{REPO}/main/{folder}/{filename}"
         
         payload = {'caption': CAPTION, 'access_token': ACCESS_TOKEN}
@@ -50,7 +50,7 @@ def post_to_instagram(folder, filename, is_video):
                 for i in range(10): # Max 5 minutes wait
                     print(f"⏳ IG Video Processing... Attempt {i+1}/10")
                     time.sleep(30)
-                    status_res = requests.get(f"https://graph.facebook.com/v19.0/{creation_id}?fields=status_code&access_token={ACCESS_TOKEN}").json()
+                    status_res = requests.get(f"https://graph.facebook.com/v25.0/{creation_id}?fields=status_code&access_token={ACCESS_TOKEN}").json()
                     if status_res.get('status_code') == 'FINISHED':
                         print("✅ IG Video Ready! Publishing now...")
                         p_res = requests.post(f"{ig_base}/media_publish", data={'creation_id': creation_id, 'access_token': ACCESS_TOKEN}).json()
@@ -74,10 +74,10 @@ def post_to_facebook(folder, filename, is_video):
         media_url = f"https://raw.githubusercontent.com/{REPO}/main/{folder}/{filename}"
         
         if is_video:
-            fb_url = f"https://graph.facebook.com/v19.0/{FB_PAGE_ID}/videos"
+            fb_url = f"https://graph.facebook.com/v25.0/{FB_PAGE_ID}/videos"
             res = requests.post(fb_url, data={'description': CAPTION, 'file_url': media_url, 'access_token': ACCESS_TOKEN}).json()
         else:
-            fb_url = f"https://graph.facebook.com/v19.0/{FB_PAGE_ID}/photos"
+            fb_url = f"https://graph.facebook.com/v25.0/{FB_PAGE_ID}/photos"
             # Image ke liye local file upload zyada stable hai
             with open(os.path.join(folder, filename), 'rb') as f:
                 res = requests.post(fb_url, data={'caption': CAPTION, 'access_token': ACCESS_TOKEN}, files={'source': f}).json()
