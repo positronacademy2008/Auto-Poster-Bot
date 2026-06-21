@@ -1,0 +1,195 @@
+{
+  "academy": {
+    "name": "Positron Academy",
+    "location": "Bhilwara, Rajasthan",
+    "whatsapp_number": "8104894648",
+    "whatsapp_link": "https://wa.me/918104894648?text=Namaste%2C%20mujhe%20course%20details%20chahiye"
+  },
+  "reel_ending": "PTI, BSTC, B.Ed, ANM aur CET ki taiyari ke liye Positron Academy ko Follow karein.",
+  "local_hashtags": [
+    "#Bhilwara",
+    "#Rajasthan",
+    "#PositronAcademy",
+    "#PTIRajasthan",
+    "#BSTCRajasthan",
+    "#BEDAdmission",
+    "#ANMAdmission",
+    "#CETPreparation"
+  ],
+  "cta": [
+    "✅ Daily guidance ke liye humein Follow karein.",
+    "📩 Admission ke liye DM karein: ADMISSION",
+    "📲 Details ke liye WhatsApp karein: {whatsapp_number}"
+  ],
+  "distribution_cycle": [
+    "student_success",
+    "educational",
+    "admission",
+    "educational",
+    "student_success",
+    "trending_funny",
+    "admission",
+    "educational",
+    "student_success",
+    "educational"
+  ],
+  "category_templates": {
+    "educational": {
+      "label": "Educational Reel",
+      "hooks": [
+        "🎯 {course} aspirants: kya aap yeh scoring step follow kar rahe hain?",
+        "📚 {course} preparation ko smart banana hai? Yeh tip save karein.",
+        "⚡ {course} mein better score ke liye aaj se yeh habit shuru karein."
+      ],
+      "values": [
+        "{educational_tip}",
+        "Simple plan: concept samjhein, short notes banayein aur timed practice se revision check karein. {educational_tip}",
+        "Aaj ka action step: 25 minute focused study + 10 practice questions + 5 minute error review. {educational_tip}"
+      ]
+    },
+    "student_success": {
+      "label": "Student Success Story",
+      "hooks": [
+        "🌟 Student Progress Spotlight: chhoti consistency, bada result.",
+        "🏆 {course} success ka secret talent nahi—daily discipline hai.",
+        "👏 Har mock test ek naya chance hai: improve, repeat, succeed."
+      ],
+      "values": [
+        "Progress ka repeatable formula: {success_focus} Har week apna score compare karke next target set karein.",
+        "Real progress tab dikhti hai jab student apni galtiyon ko note karke next test mein unhe repeat nahi karta. {success_focus}",
+        "Apni weekly progress likhein: attempted questions, accuracy aur weak topics. {success_focus}"
+      ]
+    },
+    "admission": {
+      "label": "Admission Information",
+      "hooks": [
+        "📢 {course} admission ki planning kar rahe hain? Pehle yeh checklist dekhein.",
+        "📝 {course} admission: documents aur guidance ko last day ke liye mat chhodiye.",
+        "🚨 {course} aspirants—admission process samajhna preparation jitna hi zaroori hai."
+      ],
+      "values": [
+        "{admission_steps}",
+        "Eligibility, current dates aur required documents official notification se verify karein. Personal guidance ke liye Positron Academy se sampark karein. {admission_steps}",
+        "Document folder ready rakhein aur form submit karne se pehle har detail double-check karein. {admission_steps}"
+      ]
+    },
+    "trending_funny": {
+      "label": "Trending/Funny Educational",
+      "hooks": [
+        "😂 Jab timetable 6 ghante ka ho aur padhai 16 minute ki...",
+        "😅 Exam kal ho aur dimaag bole: ek reel aur dekh lete hain!",
+        "📱 POV: phone silent kiya aur focus mode finally ON ho gaya."
+      ],
+      "values": [
+        "Relatable hai, lekin comeback simple hai: {funny_focus}",
+        "Meme khatam, ab 25-minute focus sprint shuru. {funny_focus}",
+        "Hansi bhi zaroori, revision bhi. {funny_focus}"
+      ]
+    }
+  },
+  "courses": [
+    {
+      "key": "pti",
+      "template_name": "PTI Admission",
+      "display_name": "PTI",
+      "educational_tip": "Physical test ke saath theory syllabus, previous papers aur recovery routine ko weekly plan mein balance karein.",
+      "success_focus": "fitness log, topic-wise practice aur weekly mock analysis.",
+      "admission_steps": "PTI eligibility, application dates, physical criteria aur document list ko official notification se verify karein.",
+      "funny_focus": "running shoes ready rakhein aur theory notes ko bhi daily time dein."
+    },
+    {
+      "key": "bstc",
+      "template_name": "BSTC Admission",
+      "display_name": "BSTC",
+      "educational_tip": "Mental Ability, Rajasthan GK, Teaching Aptitude aur Language sections ko rotation mein revise karein.",
+      "success_focus": "daily Rajasthan GK revision, timed quizzes aur accuracy tracking.",
+      "admission_steps": "BSTC eligibility, counselling stages, choice filling aur required documents ko official portal par confirm karein.",
+      "funny_focus": "Rajasthan GK ke 10 questions abhi solve karein—save ki hui reel baad mein bhi rahegi."
+    },
+    {
+      "key": "bed",
+      "template_name": "B.Ed Admission",
+      "display_name": "B.Ed",
+      "educational_tip": "Teaching Aptitude, reasoning, language aur general awareness ko topic-wise questions ke saath prepare karein.",
+      "success_focus": "concept clarity, previous-paper practice aur incorrect answers ka revision.",
+      "admission_steps": "B.Ed entrance, counselling, college choice aur document verification ki current details official notification se check karein.",
+      "funny_focus": "teacher banne ki preparation mein apne distraction ko pehle discipline sikhayein."
+    },
+    {
+      "key": "anm",
+      "template_name": "ANM Admission",
+      "display_name": "ANM",
+      "educational_tip": "Health basics, nutrition, community health aur general science ke short notes ko regular revise karein.",
+      "success_focus": "diagram-based revision, health-topic flashcards aur weekly self-tests.",
+      "admission_steps": "ANM eligibility, age criteria, merit/entrance process aur document requirements official source se verify karein.",
+      "funny_focus": "notes ko ICU mein jaane se bachayein—roz 20 minute revision dein."
+    },
+    {
+      "key": "cet",
+      "template_name": "CET Preparation",
+      "display_name": "CET",
+      "educational_tip": "Rajasthan GK, reasoning, maths, Hindi aur English ke liye sectional targets aur mock-test analysis rakhein.",
+      "success_focus": "speed-accuracy balance, error notebook aur full-length mock routine.",
+      "admission_steps": "CET notification, eligibility, application window aur exam pattern ko official recruitment portal se confirm karein.",
+      "funny_focus": "guesswork kam karein, elimination technique aur timed practice zyada karein."
+    }
+  ],
+  "profile_optimization": [
+    {
+      "item": "Professional Academy DP",
+      "recommendation": "High-contrast Positron Academy logo use karein; mobile size par bhi naam readable ho."
+    },
+    {
+      "item": "WhatsApp Contact Link",
+      "recommendation": "Bio mein {whatsapp_link} add karein aur pre-filled message 'Namaste, mujhe course details chahiye' use karein."
+    },
+    {
+      "item": "Course List",
+      "recommendation": "Bio mein PTI | BSTC | B.Ed | ANM | CET ko clear line mein dikhayein."
+    },
+    {
+      "item": "Success Result Highlights",
+      "recommendation": "Sirf verified student consent aur accurate result details ke saath Result highlight banayein."
+    },
+    {
+      "item": "Admission Highlights",
+      "recommendation": "Eligibility, documents, process aur current notices ke liye Admission highlight maintain karein."
+    }
+  ],
+  "engagement": {
+    "poll_ideas": [
+      "Aaj ka study target complete hua? — Haan / Abhi kar raha hoon",
+      "Sabse tough section? — Rajasthan GK / Reasoning",
+      "Next live doubt class kis course par? — PTI / BSTC",
+      "Mock test kab dena pasand karte hain? — Morning / Evening",
+      "Admission help chahiye? — DM karunga / WhatsApp karunga"
+    ],
+    "story_ideas": [
+      "Morning study target sticker",
+      "One-question quiz with answer in the next story",
+      "Classroom or practice-session behind-the-scenes",
+      "Verified student progress/result card with consent",
+      "Admission document checklist",
+      "Evening doubt-box: 'Apna question bhejein'"
+    ],
+    "daily_posting_recommendations": [
+      "7:00–8:00 AM IST: study-tip story and daily poll",
+      "12:30–2:00 PM IST: one quiz/result/admission story",
+      "6:00–7:30 PM IST: one primary feed post or reel",
+      "8:30–9:00 PM IST: CTA story with DM and WhatsApp link",
+      "Target: 1 reel + 1 feed image per day, supported by 3–5 stories; review Insights weekly"
+    ],
+    "reel_topic_suggestions": [
+      "PTI physical + theory weekly timetable",
+      "BSTC Rajasthan GK rapid-fire quiz",
+      "B.Ed teaching aptitude common mistakes",
+      "ANM health-science one-minute revision",
+      "CET speed versus accuracy challenge",
+      "Student mock-score improvement journey",
+      "Admission document checklist in 20 seconds",
+      "POV/meme: timetable versus phone distraction",
+      "Three mistakes aspirants should stop this week",
+      "Comment-your-answer practice question"
+    ]
+  }
+}
