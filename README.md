@@ -72,7 +72,7 @@ Optional environment variables:
 | `PLATFORM_DELAY_SECONDS` | `15` | Delay between Facebook and Instagram |
 | `MEDIA_DELAY_SECONDS` | `30` | Delay between image and video |
 
-The workflow runs once daily at 6:00 PM IST, posts one image and one reel when available, runs tests first, and commits only `posted.txt` plus `content_state.json`. A concurrency lock prevents overlapping runs.
+The workflow preserves the original four daily cron windows: 7:00 AM, 8:00 AM, 5:00 PM, and 6:00 PM IST. Each run posts one image and one reel when available, runs tests first, and commits only `posted.txt` plus `content_state.json`. A concurrency lock prevents overlapping runs. GitHub Actions schedules are best-effort and may start later than the exact cron time when GitHub has a queue.
 
 ## Editing content safely
 

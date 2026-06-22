@@ -23,7 +23,7 @@ Preparation + Admission Guidance
 - 12:30–2:00 PM IST: quiz, verified result, or admission story.
 - 6:00–7:30 PM IST: primary reel and feed image.
 - 8:30–9:00 PM IST: DM/WhatsApp CTA story.
-- Target one reel plus one feed image daily, supported by 3–5 stories. Review Instagram Insights every week and adjust timing to audience activity.
+- The automated bot preserves the requested legacy cadence of four daily run windows, with up to one reel and one image per run. Review Instagram Insights weekly; reduce frequency if reach or retention declines.
 
 ## Poll ideas
 
