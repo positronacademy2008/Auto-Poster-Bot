@@ -1,5 +1,3 @@
-1.mp4
-2.mp4
 Ad_004.png
 Ad_005.png
 Ad_006.png
@@ -106,8 +104,5 @@ images/Ad_66.png
 images/Ad_67.png
 images/Ad_68.png
 images/Ad_69.png
-video/3.mp4
-video/4.mp4
-video/5.mp4
-video/6.mp4
-video/7.mp4
+images/Ad_7.png
+video/1.mp4
