@@ -5,5 +5,7 @@ images/Ad_007.png
 images/Ad_008.png
 images/Ad_009.png
 images/Ad_011.png
+images/Ad_012.png
 video/1.mp4
 video/2.mp4
+video/3.mp4
