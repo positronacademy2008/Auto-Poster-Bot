@@ -11,4 +11,6 @@ images/Ad_014.png
 images/Ad_015.png
 images/Ad_016.png
 images/Ad_017.png
+images/Ad_018.png
 video/1.mp4
+video/2.mp4
