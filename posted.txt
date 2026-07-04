@@ -32,4 +32,6 @@ images/Ad_035.png
 images/Ad_036.png
 images/Ad_037.png
 images/Ad_038.png
+images/Ad_039.png
 video/1.mp4
+video/2.mp4
