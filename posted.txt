@@ -74,4 +74,6 @@ images/Ad_39.png
 images/Ad_4.png
 images/Ad_40.png
 images/Ad_41.png
+images/Ad_42.png
 video/1.mp4
+video/2.mp4
