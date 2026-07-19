@@ -95,4 +95,6 @@ images/Ad_58.png
 images/Ad_59.png
 images/Ad_6.png
 images/Ad_60.png
+images/Ad_61.png
 video/1.mp4
+video/2.mp4
