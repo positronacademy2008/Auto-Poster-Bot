@@ -101,10 +101,5 @@ images/Ad_63.png
 images/Ad_64.png
 images/Ad_65.png
 images/Ad_66.png
+images/Ad_67.png
 video/1.mp4
-video/2.mp4
-video/3.mp4
-video/4.mp4
-video/5.mp4
-video/6.mp4
-video/7.mp4
