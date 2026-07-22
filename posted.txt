@@ -105,7 +105,9 @@ images/Ad_67.png
 images/Ad_68.png
 images/Ad_69.png
 images/Ad_7.png
+images/Ad_70.png
 video/1.mp4
 video/2.mp4
 video/3.mp4
 video/4.mp4
+video/5.mp4
