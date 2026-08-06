@@ -50,4 +50,6 @@ images/Ad_13.png
 images/Ad_14.png
 images/Ad_15.png
 images/Ad_2.png
+images/Ad_20.png
 video/1.mp4
+video/2.mp4
