@@ -58,5 +58,7 @@ images/Ad_24.png
 images/Ad_25.png
 images/Ad_26.png
 images/Ad_27.png
+images/Ad_28.png
 video/1.mp4
 video/2.mp4
+video/3.mp4
